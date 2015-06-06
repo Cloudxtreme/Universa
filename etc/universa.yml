@@ -1,0 +1,9 @@
+---
+# The following plugins will load on start:
+plugins:
+   - Universa::Plugin::PlayerSockets
+
+# Subsystems are marged in with Core; You probably don't want to touch these:
+subsystems:
+   - Universa::PluginSystem
+...
