@@ -1,6 +1,9 @@
 package Universa::Core;
 
 use Moose;
+use Moose::Util qw(apply_all_roles);
+use Moose::Autobox;
+
 use Universa::Config;
 
 with 'Universa::Role::Configuration' => {
@@ -16,12 +19,11 @@ sub universa_init    {}
 sub start {
     my $self = shift;
 
-    $self->universa_preinit;
+    # consume subsystem roles:
+    apply_all_roles($self, $self->config->{'subsystems'}->flatten);
+
+	$self->universa_preinit;
     $self->universa_init;
 }
-
-# Subsystems:
-with 'Universa::PluginSystem'; # Provides a simple yet powerful plugin system
-with 'Universa::DEMUX';        # Demultiplexes game library output
 
 __PACKAGE__->meta->make_immutable;

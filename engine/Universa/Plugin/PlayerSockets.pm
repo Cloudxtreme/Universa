@@ -28,6 +28,36 @@ has 'listen6' => (
     lazy      => 1,
     );
 
+sub build_listen4 {
+    my $self = shift;
+    my $port = $self->config->{port};
+    my $bind = $self->config->{ipv4_bind} || '0.0.0.0';
+        
+    IO::Socket::INET->new(
+        Domain    => AF_INET,
+        LocalAddr => $bind,
+        LocalPort => $port,
+        Listen    => $self->config->{'max'}  || 20,
+        Blocking  => 0,
+        Reuse     => 1,
+        ) or die "Can't create socket: $!\n";
+}
+
+sub build_listen6 {
+    my $self = shift;
+    my $port = $self->config->{port};
+    my $bind = $self->config->{ipv6_bind} || '::0';
+    
+    IO::Socket::INET6->new(
+        Domain    => AF_INET6,
+        LocalAddr => $bind,
+        LocalPort => $port,
+        Listen    => $self->config->{'max'}  || 20,
+        Blocking  => 0,
+        Reuse     => 1,
+        ) or die "Can't create socket: $!\n";
+}
+
 
 sub universa_preinit {
     my $self = shift;
@@ -36,40 +66,19 @@ sub universa_preinit {
     $self->config;
 }
 
-sub build_listen4 {
+sub universa_init {
     my $self = shift;
-    my $port = $self->config->{port};
-    my $bind = $self->config->{ipv4_bind} || '0.0.0.0';
-    
-    my $socket = IO::Socket::INET->new(
-        Domain    => AF_INET,
-        LocalAddr => $bind,
-        LocalPort => $port,
-        Listen    => $self->config->{'max'}  || 20,
-        Blocking  => 0,
-        Reuse     => 1,
-        ) or die "Can't create socket: $!\n";
-    print "listening for connections on $bind:$port\n";
-    
-    $socket;
-}
 
-sub build_listen6 {
-    my $self = shift;
-    my $port = $self->config->{port};
-    my $bind = $self->config->{ipv6_bind} || '::0';
-    
-    my $socket = IO::Socket::INET6->new(
-        Domain    => AF_INET6,
-        LocalAddr => $bind,
-        LocalPort => $port,
-        Listen    => $self->config->{'max'}  || 20,
-        Blocking  => 0,
-        Reuse     => 1,
-        ) or die "Can't create socket: $!\n";
-    print "listening for connections on $bind:$port\n";
+    foreach my $ipv (qw[4 6]) {
+	next unless $self->config->{'ipv' . $ipv};
 
-    $socket;
+	my $call = 'listen' . $ipv;
+	my $listener = $self->$call;
+	my $bind = $self->config->{'ipv' . $ipv . '_bind'} .
+	    ':' . $self->config->{'port'};
+
+	print "listening for connections on $bind\n";
+    }
 }
 
 __PACKAGE__->meta->make_immutable;
