@@ -5,6 +5,8 @@ package Universa::Plugin::PlayerSockets;
 
 use Moose;
 use IO::Socket;
+use IO::Socket::INET6;
+use POSIX ':sys_wait_h';
 
 with 'Universa::Role::Plugin';
 with 'Universa::Role::Initialization';
@@ -38,7 +40,6 @@ sub build_listen4 {
         LocalAddr => $bind,
         LocalPort => $port,
         Listen    => $self->config->{'max'}  || 20,
-        Blocking  => 0,
         Reuse     => 1,
         ) or die "Can't create socket: $!\n";
 }
@@ -53,11 +54,11 @@ sub build_listen6 {
         LocalAddr => $bind,
         LocalPort => $port,
         Listen    => $self->config->{'max'}  || 20,
-        Blocking  => 0,
         Reuse     => 1,
         ) or die "Can't create socket: $!\n";
 }
 
+$SIG{CHLD} = \&reaper;
 
 sub universa_preinit {
     my $self = shift;
@@ -77,8 +78,39 @@ sub universa_init {
 	my $bind = $self->config->{'ipv' . $ipv . '_bind'} .
 	    ':' . $self->config->{'port'};
 
+	defined(my $child_pid = fork()) or die "can't fork: $!";
+
+	if ($child_pid) {
+	    for (;;) {
+		my $so_client = $listener->accept;
+		$self->on_socket_accept($so_client);
+	    }
+	}
+
 	print "listening for connections on $bind\n";
     }
+}
+
+sub on_socket_accept {
+    my ($self, $client) = @_;
+
+    print $client "Hello, World!\n";
+
+    while (my $line = <$client>) {
+	print $client $line;
+    }
+
+    close $client;
+}
+
+sub reaper {
+    my $child_pid;
+
+    do {
+	$child_pid = waitpid(-1, WNOHANG);
+    } while $child_pid > 0;
+
+    print "$child_pid exited\n";
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -115,7 +147,6 @@ package Universa::Plugin::PlayerSockets::Config;
 
 use Moose;
 with 'MooseX::SimpleConfig';
-
 
 has 'port' => ( isa => 'Int',  is => 'ro', default => 9001 );
 has 'ipv4' => ( isa => 'Bool', is => 'ro', default => 1    );
