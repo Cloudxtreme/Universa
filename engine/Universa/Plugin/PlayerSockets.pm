@@ -67,7 +67,8 @@ sub universa_preinit {
     $self->config;
 }
 
-sub universa_init {
+# We start listening after all plugins have had a change to initialize:
+sub universa_postinit {
     my $self = shift;
 
     foreach my $ipv (qw[4 6]) {
@@ -87,19 +88,17 @@ sub universa_init {
 	    }
 	}
 
-	print "listening for connections on $bind\n";
+	print "[Player Sockets] listening for connections on $bind\n";
     }
 }
 
 sub on_socket_accept {
     my ($self, $client) = @_;
 
-    print $client "Hello, World!\n";
+    my $player = Universa::Plugin::PlayerSockets::SocketedPlayer->new(
+	_socket => $client);
 
-    while (my $line = <$client>) {
-	print $client $line;
-    }
-
+    $self->core->register_entity($player);
     close $client;
 }
 
@@ -120,7 +119,8 @@ package Universa::Plugin::PlayerSockets::SocketedPlayer;
 
 use Moose;
 
-with 'Universa::Role::PlayerEntity';
+extends 'Universa::Entity';
+with 'Universa::Role::Player';
 
 has '_socket' => (
     isa       => 'FileHandle',
@@ -149,7 +149,7 @@ use Moose;
 with 'MooseX::SimpleConfig';
 
 has 'port' => ( isa => 'Int',  is => 'ro', default => 9001 );
-has 'ipv4' => ( isa => 'Bool', is => 'ro', default => 1    );
+has 'ipv4' => ( isa => 'Bool', is => 'ro', default => 0    );
 has 'ipv6' => ( isa => 'Bool', is => 'ro',default => 0     );
 has 'ipv4_bind' => ( isa => 'Str', is  => 'ro', default => '127.0.0.1' );
 has 'ipv6_bind' => ( isa => 'Str', is  => 'ro', default => '::1'       );
@@ -162,16 +162,15 @@ __DATA__
 # Configuration template for Universa::Plugin::PlayerSockets:
 # Default values are commented out when this file is created.
 
-#  port: 9001
+# port: 9001
 
 #  Set any of these to a false value and they will be disabled. True otherwise:
-#  ipv4: 1
-#  ipv6: 0
+ipv4: 1
+# ipv6: 0
 
 # The following settings default to localhost. Be sure to change these
 # if you are planning to run Universa on a network. To listen on all interfaces,
 # 0.0.0.0 and ::0 might be sane choices:
-#  ipv4_bind: 127.0.0.1
-#  ipv6_bind: ::1
-read_file: 0 # Set this to 1 if you have read this file
+# ipv4_bind: 127.0.0.1
+# ipv6_bind: ::1
 ...

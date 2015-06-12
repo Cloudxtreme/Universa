@@ -14,4 +14,8 @@ has 'core'   => (
     required => 1,
     );
 
+sub dprint {
+    my ($self, @args) = @_;
+}
+
 1;

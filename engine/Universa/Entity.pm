@@ -1,6 +1,6 @@
-package Universa::Role::Entity;
+package Universa::Entity;
 
-use Moose::Role;
+use Moose;
 use Data::GUID;
 
 has 'id'        => (
@@ -18,11 +18,7 @@ has 'info'      => (
     );
 
 
-sub build_id {
-    my $self = shift;
-
-    # TODO
-}
+sub build_id { Data::GUID->new->as_string }
 
 # Template for Entity meta information
 sub build_info {
@@ -31,6 +27,7 @@ sub build_info {
     }
 }
 
-requires 'put';
+# Data input:
+sub put {}
 
 1;

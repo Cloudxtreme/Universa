@@ -11,6 +11,7 @@ sub _build_plugins {
     my @autoloaded = ();
     
     if (exists ($self->config->{'plugins'})) {
+	print "loading plugins...\n";
 	my $plugins = $self->config->{'plugins'};
 	
         foreach my $plugin ($self->config->{'plugins'}->flatten) {
@@ -53,5 +54,9 @@ after 'universa_preinit' => sub {
 after 'universa_init' => sub {
     shift->dispatch('Initialization' => 'universa_init');
 };
-    
+
+after 'universa_postinit' => sub {
+    shift->dispatch('Initialization' => 'universa_postinit');
+};
+
 1;
