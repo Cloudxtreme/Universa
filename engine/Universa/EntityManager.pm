@@ -22,7 +22,7 @@ sub register_entity {
 	);
 
     $self->_entities->push($entity);
-    print "registered entity '@{ [ $entity->id ] }'\n";
+    $self->dispatch('EntityHandler' => 'register_entity' => $entity);
 }
 
 sub _build_entities {

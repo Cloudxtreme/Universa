@@ -16,6 +16,7 @@ with 'Universa::Role::Configuration' => {
 sub universa_preinit  {}
 sub universa_postinit {}
 sub universa_init     {}
+sub dispatch          {} # ($role, $call, @args)
 
 sub start {
     my $self = shift;

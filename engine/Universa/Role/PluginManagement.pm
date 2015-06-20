@@ -73,7 +73,7 @@ role {
 	first { $_->name eq $name } $self->$store->flatten;
     };
 
-    method 'dispatch' => sub {
+    after 'dispatch' => sub {
 	my ($self, $role, $call, @args) = pos_validated_list(
 	    \@_,
 	    { does => __PACKAGE__ },
