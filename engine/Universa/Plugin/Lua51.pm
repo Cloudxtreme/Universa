@@ -37,6 +37,12 @@ sub register_entity {
     $thread->close;
 }
 
+sub on_entity_data {
+    my ($self, $entity, $data) = @_;
+
+    # TODO: send rawInput to Lua?
+}
+
 sub _build_states {
     my $self = shift;
     

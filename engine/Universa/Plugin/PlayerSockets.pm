@@ -99,6 +99,16 @@ sub on_socket_accept {
 	_socket => $client);
 
     $self->core->register_entity($player);
+
+    while (my $data = <$client>) {
+	chomp $data;
+	$data =~ s/^\s+|\s+$//;
+
+	# Send an event notifying the watchers that data has arrived:
+	$self->core->dispatch(
+	    'EntityHandler' => 'on_entity_data' => $player, $data);
+    }
+    
     close $client;
 }
 
