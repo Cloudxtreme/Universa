@@ -3,9 +3,9 @@ package Universa::Plugin::Lua51;
 use Moose;
 use Lua::API;
 use Scalar::Util;
+use Moose::Autobox;
 
 with 'Universa::Role::Plugin';
-with 'Universa::Role::Initialization';
 with 'Universa::Role::EntityHandler';
 
 with 'Universa::Role::Configuration' => {
@@ -22,42 +22,19 @@ has '_states' => (
 
 sub register_entity {
     my $self = shift;
-
-    # TODO
-}
-
-sub universa_postinit {
-    my $self = shift;
-
-    my %params = (); # TODO
-
-    my $class  = Scalar::Util::blessed($self);
-
-    my $L = $self->_states->[0]; # main Lua thread
     
-    my $status = $L->cpcall(
-	sub {
-	    $L->openlibs;
-	    $L->gc( Lua::API::GCRESTART, 0);
-	    
-	    my $initstat = $L->luainit;
-	    return 0 if $initstat;
-	    
-	    my $T = $L->newthread;
-	    my $success = $T->loadfile('lib/boot.lua');
-	    
-	    #for (1..10) {
-	    $T->resume(0);
-	    #print "Tick on engine side\n";
-	    #}
-	    
-	    $T->report($success);
-	    return 0;
-	    
-	}, \%params);
-
-    $L->report($status);
-    $L->close;
+    # TODO: change this stuff to be less static:
+    my $thread = $self->_states->[0]->newthread;
+	
+    $thread->openlibs; # TODO: remove this
+    $thread->gc( Lua::API::GCRESTART, 0);
+    
+    my $result = $thread->loadfile('lib/boot.lua');
+    $thread->report($result);
+    $result = $thread->resume(0);
+    $thread->report($result);
+    
+    $thread->close;
 }
 
 sub _build_states {
@@ -128,7 +105,9 @@ sub newthread {
     my $self = shift;
 
     my $T = $self->L->newthread;
-    $self->new( _driver => $self->_driver, L => $T );
+    my $state = $self->new( _driver => $self->_driver, L => $T );
+    $self->_driver->_states->push($state);
+    $state; # Not sure if we need this, but just in case
 }
 
 sub dostring {
@@ -216,6 +195,9 @@ sub openlibs    {}
 sub cpcall      {}
 sub close       {}
 sub resume      {}
+sub getglobal   {}
+sub is_function {}
+sub register    {}
 
 1;
 
