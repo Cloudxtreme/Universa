@@ -7,6 +7,7 @@ parameter 'configfile' => ( isa => 'Str', required => 1               );
 parameter 'class'      => ( isa => 'Str', required => 1               );
 parameter 'store'      => ( isa => 'Str', default  => 'config'        );
 parameter 'builder'    => ( isa => 'Str', default  => '_build_config' );
+parameter 'confdir'    => ( isa => 'Str', default  => 'etc'           );
 
 role {
     my $params = shift;
@@ -22,9 +23,11 @@ role {
 	my $self = shift;
 	
 	# Create the file if it doesn't exist or is empty:
-	if (! -f 'etc/' . $params->configfile) {
+	if (! -f $params->confdir . '/' . $params->configfile) {
 	    
-	    open my $fh, '>', 'etc/' . $params->configfile or die $!;
+	    open my $fh, '>',
+	    $params->confdir . '/' . $params->configfile or die $!;
+	    
 	    {
 		local $/ = undef;
 		my $data = $params->class . '::DATA';
@@ -34,7 +37,6 @@ role {
 	}
 
 	$params->class->new_with_config(
-	    configfile => 'etc/' . $params->configfile
-	    );
+	    configfile => $params->confdir . '/' . $params->configfile );
     }
 };

@@ -28,13 +28,23 @@ sub register_entity {
 	
     $thread->openlibs; # TODO: remove this
     $thread->gc( Lua::API::GCRESTART, 0);
-    
-    my $result = $thread->loadfile('lib/boot.lua');
+
+    $self->register_ffi_base($thread); # install Universa API namespace
+    my $result = $thread->loadfile('lib/entity.lua');
     $thread->report($result);
+    
+    $thread->getglobal('foo');
     $result = $thread->resume(0);
+    #$thread->traceback;
     $thread->report($result);
     
     $thread->close;
+}
+
+sub register_ffi_base {
+    my ($self, $thread) = @_;
+
+    # TODO
 }
 
 sub on_entity_data {
@@ -74,7 +84,7 @@ has '_driver'   => (
 has 'L'         => (
     isa         => 'Lua::API::State',
     is          => 'ro',
-    default     => sub { Lua::API::State->open },
+    builder     => 'build_state',
     handles     => 'Universa::Plugin::Lua51::API',
     );
 
@@ -131,7 +141,7 @@ sub traceback {
     return 1 if ($self->isstring(1));
     $self->L->getfield( Lua::API::GLOBALSINDEX, 'debug');
     
-    if ($self->isstable(-1)) {
+    if ($self->istable(-1)) {
 	$self->pop(1);
 	return 1;
     }
@@ -174,6 +184,8 @@ sub luainit {
     $self->dostring($self, $ENV{'LUA_INIT'}, "=" . 'LUA_INIT');
 }
 
+sub build_state { Lua::API::State->open }
+
 __PACKAGE__->meta->make_immutable;
 
 package Universa::Plugin::Lua51::API;
@@ -194,7 +206,8 @@ sub pushvalue   {}
 sub call        {}
 sub getfield    {}
 sub loadbuffer  {}
-sub isstable    {}
+sub istable     {}
+sub isstring    {}
 sub loadfile    {}
 sub tostring    {}
 sub openlibs    {}
