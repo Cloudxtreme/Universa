@@ -2,49 +2,45 @@ package Universa::DEMUX;
 # The Universa demultiplexer subsystem
 
 use Moose::Role;
-use Moose::Autobox;
+use MooseX::Params::Validate qw(pos_validated_list);
+use Universa::Attribute::ChannelCollection;
 
-use List::Util qw(first);
-
-has '_channels' => (
-    isa         => 'Universa::Channel',
-    is          => 'ro',
-    builder     => 'build_channels',
-    lazy        => 1,
+has '_demux_channels'            => (
+    does                         => 'ArrayRef[Universa::Role::Channel]',
+    traits                       => ['Array'],
+    is                           => 'ro',
+    lazy                         => 1,
+    builder                      => '_build_channels',
+    handles                      => {
+	demux_add_channel        => 'add',
+	demux_remove_channel     => 'remove',
+	demux_channel_by_name    => 'by_name',
+	demux_channels_by_type   => 'by_type',
+	demux_channels_by_entity => 'by_entity',
+    },
     );
 
+sub _build_channels { Universa::Attribute::ChannelCollection->new }
 
-sub channel_by_name {
-    my ($self, $name) = pos_validated_list(
+sub demux_input {
+    my ($self, $message) = pos_validated_list(
 	\@_,
-	{ isa => 'Universa::DEMUX' },
-	{ isa => 'Str' },
+	{ does => 'Universa::DEMUX' },
+	{ isa  => 'Universa::DEMUX::Message' },
 	);
 
-    first { $_->name eq $name } $self->_channels->flatten;
+    my $channel = $self->demux_channel_by_name($message->channel);
+    my $targets = $self->_demux_get_targets($channel, $message);
+    # TODO
 }
 
-sub channels_by_type {
-    my ($self, $type) = pos_validated_list(
+sub _demux_get_targets {
+    my ($self, $message) = pos_validated_list(
 	\@_,
-	{ isa => 'Universa::DEMUX' },
-	{ isa => 'Str' },
+	{ does => 'Universa::DEMUX' },
+	{ isa  => 'Universa::DEMUX::Message' },
 	);
 
-    grep { $_->type eq $type } $self->_channels->flatten;
-}
-
-sub channels_by_entity {
-    my ($self, $id) = pos_validated_list(
-	\@_,
-	{ isa => 'Universa::DEMUX' },
-	{ isa => 'Str' },
-	);
-
-    grep { $_->entity_by_id($id) } $self->_channels->flatten;
-}
-
-sub build_channels {
     # TODO
 }
 

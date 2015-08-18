@@ -2,12 +2,13 @@ package Universa::Role::Configuration;
 #  Integrate SimpleConfig in a Universa::PluginSystem friendly manner
 
 use MooseX::Role::Parameterized;
+use FindBin qw($Bin);
 
 parameter 'configfile' => ( isa => 'Str', required => 1               );
 parameter 'class'      => ( isa => 'Str', required => 1               );
 parameter 'store'      => ( isa => 'Str', default  => 'config'        );
 parameter 'builder'    => ( isa => 'Str', default  => '_build_config' );
-parameter 'confdir'    => ( isa => 'Str', default  => 'etc'           );
+parameter 'confdir'    => ( isa => 'Str', default  => "$Bin/etc"      );
 
 role {
     my $params = shift;

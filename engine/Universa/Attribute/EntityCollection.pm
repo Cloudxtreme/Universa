@@ -2,17 +2,17 @@ package Universa::Attribute::EntityCollection;
 $Universa::Attribute::EntityCollection::VERSION = '0.001';
 
 use Moose;
+use MooseX::Params::Validate qw(pos_validated_list);
 
-with 'MooseX::Params::Validate';
 with 'MooseX::OneArgNew' => {
-    type     => 'ArrayRef[Universa::Role::Entity|ArrayRef[Undef]',
+    type     => 'ArrayRef[Universa::Role::Entity|Undef]',
     init_arg => '_entities',
 };
 
 has '_entities'  => (
     does         => 'ArrayRef[Universa::Role::Entity|ArrayRef[Undef]',
     traits       => ['Array'],
-    is           => 'ro',
+    is           => 'rw',
     lazy         => 1
     builder      => '_build_entities',
     handles      => {
@@ -30,7 +30,7 @@ sub by_uuid {
 	{ isa => 'Str' },
 	);
 
-    first { $_->uuid eq $uuid } @{ $self->_entities };
+    $self->_entities->first( sub { $_->uuid eq $uuid } );
 }
 
 sub by_name {
@@ -40,7 +40,7 @@ sub by_name {
 	{ isa => 'Str' },
 	);
 
-    first { $_->name eq $name } @{ $self->_entities };
+    $self->_entities->first( sub { $_->name eq $name } );
 }
 
 sub remove {
@@ -50,7 +50,7 @@ sub remove {
 	{ isa => 'Str' },
 	);
 
-    # TODO: Remove an entity by UUID
+    $self->_entities( $self->_entities->grep( sub { $_->uuid ne $uuid } ) );
 }
 
 __PACKAGE__->meta->make_immutable;
