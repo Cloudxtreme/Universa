@@ -28,9 +28,10 @@ sub demux_input {
 	{ isa  => 'Universa::DEMUX::Message' },
 	);
 
-    my $channel = $self->demux_channel_by_name($message->channel);
-    my $targets = $self->_demux_get_targets($channel, $message);
-    # TODO
+    my $next_target = $self->_demux_get_targets($message);
+    while (my ($entity, $type) = $next_target->() ) {
+	$entity->put($type, $message);
+    }
 }
 
 sub demux_create_channel {
@@ -49,6 +50,7 @@ sub _demux_get_targets {
 	{ isa  => 'Universa::DEMUX::Message' },
 	);
 
+    my $channel = $self->demux_channel_by_name($message->channel);
     # TODO
 }
 
