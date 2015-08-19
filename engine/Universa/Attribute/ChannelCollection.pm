@@ -3,6 +3,7 @@ $Universa::Attribute::ChannelCollection::VERSION = '0.001';
 
 use Moose;
 use MooseX::Params::Validate qw(pos_validated_list);
+use Universa::Channel;
 
 has '_channels'  => (
     isa          => 'ArrayRef[Universa::Channel|Undef]',

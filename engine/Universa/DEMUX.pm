@@ -3,11 +3,10 @@ package Universa::DEMUX;
 
 use Moose::Role;
 use MooseX::Params::Validate qw(pos_validated_list);
-use Universa::Attribute::ChannelCollection;
+use Universa qw(Attribute::ChannelCollection Channel);
 
 has '_demux_channels'            => (
-    does                         => 'ArrayRef[Universa::Role::Channel]',
-    traits                       => ['Array'],
+    isa                         => 'Universa::Attribute::ChannelCollection',
     is                           => 'ro',
     lazy                         => 1,
     builder                      => '_build_channels',
@@ -32,6 +31,15 @@ sub demux_input {
     my $channel = $self->demux_channel_by_name($message->channel);
     my $targets = $self->_demux_get_targets($channel, $message);
     # TODO
+}
+
+sub demux_create_channel {
+    my ($self, @params) = @_;
+
+    if ( defined(my $channel = Universa::Channel->new(@params)) ) {
+	$self->demux_add_channel($channel);
+	return $channel;
+    }
 }
 
 sub _demux_get_targets {
