@@ -15,19 +15,18 @@ sub register_entity {
     return unless $entity->type eq 'player';
 
     # All players have inventories:
-    my $inventory = $self->core->demux_create_channel(
-	type => 'inventory',
+    my $auth = $self->core->demux_create_channel(
+	type => '__login__',
 	name => $entity->id . '.inv',
 	);
 
-    $inventory->add_entity($entity);
-    $entity->info->{'channels'}->{'inv_channel'} = $inventory;
+    $auth->add_entity($entity);
 
     # The inventory channel does not hold only inventory items,
     # It is a channel that holds all of the roles and assets of
     # a player.
 
-    $inventory->info->{'controller'} = controller::auth->new(
+    $auth->info->{'controller'} = controller::auth->new(
 	core    => $self->core,
 	channel => $inventory,
 	);
@@ -35,11 +34,11 @@ sub register_entity {
 
 sub on_entity_data {
     my ($self, $entity, $data) = @_;
-
-    foreach my $channel (keys %{ $entity->info->{'channels'} }) {
-	$channel = $entity->info->{'channels'}->{$channel};
+    
+    foreach my $channel ( $self->core->demux_channels_by_entity($entity->id) ) {
 	my $controller = $channel->info->{'controller'};
-	$controller->raw_input($entity, $data);
+	$controller->raw_input($entity, $data)
+	    if $controller->can('raw_input');
     }
 }
 

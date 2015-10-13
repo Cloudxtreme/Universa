@@ -13,6 +13,8 @@ has '_channels'  => (
     builder      => '_build_channels',
     handles      => {
 	add      => 'push',
+	first    => 'first',
+	grep     => 'grep',
 	count    => 'count',
 	is_empty => 'is_empty',
     },
@@ -27,7 +29,7 @@ sub by_name {
 	{ isa => 'Str' },
 	);
 
-    $self->_channels->first( sub { $_->name eq $name } );
+    $self->first( sub { $_->name eq $name } );
 }
 
 sub by_type {
@@ -36,17 +38,17 @@ sub by_type {
 	{ isa => 'Str' },
 	);
 
-    $self->_channels->grep( sub { $_->type eq $type } );
+    $self->grep( sub { $_->type eq $type } );
 }
 
 sub by_entity {
-    my ($self, $uuid) = pos_validate_list(
+    my ($self, $uuid) = pos_validated_list(
 	\@_,
 	{ isa => 'Universa::Attribute::ChannelCollection' },
 	{ isa => 'Str' },
 	);
 
-    $self->_channels->grep( sub { $_->entity_by_uuid($uuid) } );
+    $self->grep( sub { $_->entity_by_uuid($uuid) } );
 }
 
 sub remove {
@@ -56,7 +58,7 @@ sub remove {
 	{ isa => 'Str' },
 	);
 
-    $self->_channels( $self->_channels->grep( sub { $_->name ne $name } ) );
+    $self->_channels( $self->grep( sub { $_->name ne $name } ) );
 
 }
 
