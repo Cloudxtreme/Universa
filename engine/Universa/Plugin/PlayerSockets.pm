@@ -96,7 +96,9 @@ sub on_socket_accept {
     my ($self, $client) = @_;
 
     my $player = Universa::Plugin::PlayerSockets::SocketedPlayer->new(
-	_socket => $client);
+	_socket => $client,
+	type    => 'player',
+	);
 
     $self->core->register_entity($player);
 
@@ -128,6 +130,7 @@ package Universa::Plugin::PlayerSockets::SocketedPlayer;
 # A socketed entity type for Universa
 
 use Moose;
+use MooseX::Params::Validate;
 
 extends 'Universa::Entity';
 with 'Universa::Role::Player';
@@ -142,13 +145,12 @@ has '_socket' => (
 sub put {
     my ($self, $data) = pos_validated_list(
 	\@_,
-	{ isa => 'Universa::Plugin::PlayerSockets::SocketedEntity' },
+	{ isa => 'Universa::Plugin::PlayerSockets::SocketedPlayer' },
 	{ isa => 'Any' }, # TODO: use a worthy type constraint (not string? )
 	);
 
     # TODO: Should we perform Filtering here?
     my $socket = $self->_socket;
-    print $socket $data;
 }
 
 __PACKAGE__->meta->make_immutable;

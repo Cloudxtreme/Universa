@@ -4,13 +4,13 @@ use Moose::Role;
 use MooseX::Params::Validate;
 use Moose::Autobox;
 
-use Universa::Entity;
+use Universa qw(Attribute::EntityCollection Entity);
 
 has '_entities' => (
-    isa     => 'ArrayRef[Universa::Entity]',
-    is      => 'ro',
-    builder => '_build_entities',
-    lazy    => 1,
+    isa         => 'Universa::Attribute::EntityCollection',
+    is          => 'ro',
+    builder     => '_build_entities',
+    lazy        => 1,
     );
 
 
@@ -21,15 +21,10 @@ sub register_entity {
 	{ isa  => 'Universa::Entity' },
 	);
 
-    $self->_entities->push($entity);
+    $self->_entities->add($entity);
     $self->dispatch('EntityHandler' => 'register_entity' => $entity);
 }
 
-sub _build_entities {
-    my $self = shift;
-    
-    # TODO: Load superstatic entities
-    [ Universa::Entity->new( id => 'DUMMY') ];
-}
+sub _build_entities { Universa::Attribute::EntityCollection->new }
 
 1;

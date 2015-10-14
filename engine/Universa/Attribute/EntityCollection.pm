@@ -6,47 +6,29 @@ use MooseX::Params::Validate qw(pos_validated_list);
 use Universa::Entity;
 
 has '_entities'  => (
-    isa          => 'ArrayRef[Universa::Entity|Undef]',
-    traits       => ['Array'],
-    is           => 'rw',
+    isa          => 'HashRef[Universa::Entity|Undef]',
+    traits       => ['Hash'],
+    #is           => 'rw',
     lazy         => 1,
     builder      => '_build_entities',
     handles      => {
-	add      => 'push',
+	by_uuid  => 'get',
+	_set     => 'set',
+	remove   => 'delete',
 	count    => 'count',
     },
     );
 
-sub build_entities { [] }
+sub _build_entities { {} }
 
-sub by_uuid {
-    my ($self, $uuid) = pos_validated_list(
+sub add {
+    my ($self, $entity) = pos_validated_list(
 	\@_,
 	{ isa => 'Universa::Attribute::EntityCollection' },
-	{ isa => 'Str' },
+	{ isa => 'Universa::Entity' },
 	);
 
-    $self->_entities->first( sub { $_->uuid eq $uuid } );
-}
-
-sub by_name {
-    my ($self, $name) = pos_validate_list(
-	\@_,
-	{ isa => 'Universa::Attribute::EntityCollection' },
-	{ isa => 'Str' },
-	);
-
-    $self->_entities->first( sub { $_->name eq $name } );
-}
-
-sub remove {
-    my ($self, $uuid) = pos_validated_list(
-	\@_,
-	{ isa => 'Universa::Attribute::EntityCollection' },
-	{ isa => 'Str' },
-	);
-
-    $self->_entities( $self->_entities->grep( sub { $_->uuid ne $uuid } ) );
+    $self->_set($entity->id => $entity);
 }
 
 __PACKAGE__->meta->make_immutable;

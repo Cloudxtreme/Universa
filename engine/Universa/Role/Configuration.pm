@@ -23,6 +23,8 @@ role {
     method $params->builder => sub {
 	my $self = shift;
 	
+	print "TEST: " . $params->configfile . "\n";
+
 	# Create the file if it doesn't exist or is empty:
 	if (! -f $params->confdir . '/' . $params->configfile) {
 	    

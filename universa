@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-#use Devel::Confess;
+use Devel::Confess;
 use lib 'engine';
 use Universa::Core;
 
