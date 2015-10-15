@@ -143,14 +143,17 @@ has '_socket' => (
 
 
 sub put {
-    my ($self, $data) = pos_validated_list(
+    my ($self, $message) = pos_validated_list(
 	\@_,
 	{ isa => 'Universa::Plugin::PlayerSockets::SocketedPlayer' },
-	{ isa => 'Any' }, # TODO: use a worthy type constraint (not string? )
+	{ isa => 'Universa::Message' },
 	);
 
     # TODO: Should we perform Filtering here?
     my $socket = $self->_socket;
+
+    use Data::Dumper;
+    print $socket Dumper $message;
 }
 
 __PACKAGE__->meta->make_immutable;

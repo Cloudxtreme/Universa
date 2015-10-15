@@ -40,20 +40,20 @@ has 'info'      => (
     );
 
 
-sub put {
-    my ($self, $args) = @_;
-
-    if ($args->{'target'} eq ':all') {
+sub route {
+    my ($self, $message) = @_;
+    
+    if ($message->target eq ':all') {
 	# Broadcast message:
-	foreach my $entity ( $self->_entities->values ) {
-	    $entity->put($args);
+	foreach my $entity ( $self->_entities->_values ) {
+	    $entity->put($message);
 	}
     }
 
     else {
-	foreach my $uuid ( @{ $args->{'target'} } ) {
+	foreach my $uuid ( @{ $message->target } ) {
 	    if (my $entity = $self->entity_by_uuid($uuid)) {
-		$entity->put($args);
+		$entity->put($message);
 	    }
 	}
     }

@@ -3,33 +3,34 @@ $Universa::Attribute::ChannelCollection::VERSION = '0.001';
 
 use Moose;
 use MooseX::Params::Validate qw(pos_validated_list);
+use MooseX::Types::UUID qw(UUID);
+
 use Universa::Channel;
 
 has '_channels'  => (
-    isa          => 'ArrayRef[Universa::Channel|Undef]',
-    traits       => ['Array'],
-    is           => 'rw',
+    isa          => 'HashRef[Universa::Channel|Undef]',
+    traits       => ['Hash'],
     lazy         => 1,
     builder      => '_build_channels',
     handles      => {
-	add      => 'push',
-	first    => 'first',
-	grep     => 'grep',
+	by_name  => 'get',
+	_set     => 'set',
+	_values  => 'values',
+	remove   => 'delete',
 	count    => 'count',
-	is_empty => 'is_empty',
     },
     );
 
-sub _build_channels { [] }
+sub _build_channels { {} }
 
-sub by_name {
-    my ($self, $name) = pos_validated_list(
+sub add {
+    my ($self, $channel) = pos_validated_list(
 	\@_,
 	{ isa => 'Universa::Attribute::ChannelCollection' },
-	{ isa => 'Str' },
+	{ isa => 'Universa::Channel' },
 	);
 
-    $self->first( sub { $_->name eq $name } );
+    $self->_set($channel->name => $channel);
 }
 
 sub by_type {
@@ -37,29 +38,18 @@ sub by_type {
 	{ isa => 'Universa::Attribute::ChannelCollection' },
 	{ isa => 'Str' },
 	);
-
-    $self->grep( sub { $_->type eq $type } );
+    
+    grep { $_->type eq $type } $self->_values;
 }
 
 sub by_entity {
     my ($self, $uuid) = pos_validated_list(
 	\@_,
 	{ isa => 'Universa::Attribute::ChannelCollection' },
-	{ isa => 'Str' },
+	{ isa => UUID },
 	);
 
-    $self->grep( sub { $_->entity_by_uuid($uuid) } );
-}
-
-sub remove {
-    my ($self, $name) = pos_validated_list(
-	\@_,
-	{ isa => 'Universa::Attribute::ChannelCollection' },
-	{ isa => 'Str' },
-	);
-
-    $self->_channels( $self->grep( sub { $_->name ne $name } ) );
-
+    grep { $_->entity_by_uuid($uuid) } $self->_values;
 }
 
 __PACKAGE__->meta->make_immutable;

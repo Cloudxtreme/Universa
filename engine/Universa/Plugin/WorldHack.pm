@@ -28,7 +28,7 @@ sub register_entity {
 
     $auth->info->{'controller'} = controller::auth->new(
 	core    => $self->core,
-	channel => $inventory,
+	channel => $auth,
 	);
 }
 

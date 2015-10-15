@@ -8,7 +8,6 @@ use Universa::Entity;
 has '_entities'  => (
     isa          => 'HashRef[Universa::Entity|Undef]',
     traits       => ['Hash'],
-    #is           => 'rw',
     lazy         => 1,
     builder      => '_build_entities',
     handles      => {

@@ -2,34 +2,34 @@ package Universa::Message;
 
 use Moose;
 use Moose::Util qw(apply_all_roles);
+use MooseX::Types::UUID qw(UUID);
 
-has '_workload'  => (
-    isa          => 'HashRef[Any]',
-    is           => 'ro',
-    lazy         => 1,
+has 'target'    => (
+    isa         => 'ArrayRef[' . UUID . ']|Str', # TODO: Coercion?
+    is          => 'ro',
+    required    => 1,
     );
 
-has 'serializer' => (
-    isa          => 'Str',
-    is           => 'ro',
-    default      => 'Universa::Role::JSONMessage',
+has 'source'    => (
+    isa         => UUID,
+    is          => 'ro',
     );
 
-has 'type'       => (
-    isa          => 'Str',
-    is           => 'ro',
-    required     => 1,
+has 'observers' => (
+    isa         => 'ArrayRef[' . UUID . ']|Str',
+    is          => 'ro',
     );
 
+has 'type'      => (
+    isa         => 'Str',
+    is          => 'ro',
+    required    => 1,
+    );
 
-sub BUILD {
-    my $self = shift;
-    my $serializer = $self->serializer;
-    my $type       = "Universa::Role::Message::@{ [$self->type] }";
-
-    apply_all_roles($self, [$serializer, $type]);
-}
-
-# TODO
+has 'params'    => (
+    isa         => 'HashRef[Any|Undef]',
+    is          => 'ro',
+    default     => sub { {} },
+    );
 
 __PACKAGE__->meta->make_immutable;
