@@ -5,7 +5,7 @@ use Moose::Util qw(apply_all_roles);
 use MooseX::Types::UUID qw(UUID);
 
 has 'target'    => (
-    isa         => 'ArrayRef[' . UUID . ']|Str', # TODO: Coercion?
+    isa         => 'ArrayRef[' . UUID . '|Str]', # TODO: Coercion?
     is          => 'ro',
     required    => 1,
     );

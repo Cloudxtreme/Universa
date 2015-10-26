@@ -43,8 +43,10 @@ has 'info'      => (
 sub route {
     my ($self, $message) = @_;
     
-    if ($message->target eq ':all') {
+    if ($message->target->[0] eq ':all') {
 	# Broadcast message:
+
+	print "TESTING\n";
 	foreach my $entity ( $self->_entities->_values ) {
 	    $entity->put($message);
 	}

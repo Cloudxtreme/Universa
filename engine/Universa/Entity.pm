@@ -4,6 +4,8 @@ use Moose;
 use MooseX::Types::UUID qw(UUID);
 use Data::UUID;
 
+with 'Universa::Role::FilterPipeline';
+
 has 'id'        => (
     isa         => UUID,
     is          => 'ro',

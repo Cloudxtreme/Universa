@@ -95,11 +95,12 @@ sub universa_postinit {
 sub on_socket_accept {
     my ($self, $client) = @_;
 
-    my $player = Universa::Plugin::PlayerSockets::SocketedPlayer->new(
+    my $player = Universa::Entity->new( type => 'player' );
+    my $filter = Universa::Plugin::PlayerSockets::SocketFilter->new(
 	_socket => $client,
-	type    => 'player',
 	);
 
+    $player->add_filter( 'Port' => $filter );
     $self->core->register_entity($player);
 
     while (my $data = <$client>) {
@@ -135,6 +136,16 @@ use MooseX::Params::Validate;
 extends 'Universa::Entity';
 with 'Universa::Role::Player';
 
+__PACKAGE__->meta->make_immutable;
+
+package Universa::Plugin::PlayerSockets::SocketFilter;
+# Terminating filter for ScoketedEntity
+# Terminating filters are the only filters in Universa
+# that should be holding any form of state.
+
+use Moose;
+extends 'Universa::Filter';
+
 has '_socket' => (
     isa       => 'FileHandle',
     is        => 'ro',
@@ -142,19 +153,7 @@ has '_socket' => (
     );
 
 
-sub put {
-    my ($self, $message) = pos_validated_list(
-	\@_,
-	{ isa => 'Universa::Plugin::PlayerSockets::SocketedPlayer' },
-	{ isa => 'Universa::Message' },
-	);
-
-    # TODO: Should we perform Filtering here?
-    my $socket = $self->_socket;
-
-    use Data::Dumper;
-    print $socket Dumper $message;
-}
+# TODO
 
 __PACKAGE__->meta->make_immutable;
 
