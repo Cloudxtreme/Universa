@@ -98,14 +98,16 @@ sub on_socket_accept {
     my $player = Universa::Entity->new( type => 'player' );
     my $filter = Universa::Plugin::PlayerSockets::SocketFilter->new(
 	_socket => $client,
+	stage   => 'Port',
 	);
 
-    $player->add_filter( 'Port' => $filter );
+    $player->add_filter( $filter );
     $self->core->register_entity($player);
 
     while (my $data = <$client>) {
 	chomp $data;
 	$data =~ s/^\s+|\s+$//;
+	$data = $player->get($data);
 
 	# Send an event notifying the watchers that data has arrived:
 	$self->core->dispatch(
@@ -153,7 +155,14 @@ has '_socket' => (
     );
 
 
-# TODO
+sub put {
+    my ($self, $data) = @_;
+
+    my $socket = $self->_socket;
+
+    use Data::Dumper;
+    print $socket Dumper $data;
+}
 
 __PACKAGE__->meta->make_immutable;
 

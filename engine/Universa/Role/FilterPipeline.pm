@@ -1,6 +1,7 @@
 package Universa::Role::FilterPipeline;
 
 use MooseX::Role::Parameterized;
+use Universa::Attribute::FilterCollection;
 
 parameter stages => ( isa => 'ArrayRef[Str]', required => 1 );
 parameter store  => ( isa => 'Str', default => '_filters' );
@@ -11,30 +12,43 @@ role {
     
     has $p->store  => (
 	isa        => 'Universa::Attribute::FilterCollection',
+	builder    => '_build_filters',
+	handles    => {
+	    filters_by_stage => 'filters_by_stage',
+	    add_filter => 'add',
+	    filters    => 'filters',
+	},
 	);
 
+    method '_build_filters' => sub {
+	Universa::Attribute::FilterCollection->new;
+    };
 
     method 'put' => sub {
 	my ($self, $data) = @_;
 	
+	print "DEBUG\n";
 	foreach my $stage ( @{ $p->stages } ) {
-	    foreach my $filter ( $self->filters_by_type($stage) ) {
-		$filter->put($data);
+	    foreach my $filter ( $self->filters_by_stage($stage) ) {
+		print ref($filter) . "\n";
+		$data = $filter->put($data);
 	    }
 	}
-    }
 
-    # The internal get() method is not important to me here. get() will
-    # just propagate to get_one().
+	$data;
+    };
+
     method 'get' => sub {
 	my ($self, $data) = @_;
 
 	foreach my $stage ( reverse @{ $p->stages } ) {
-	    foreach my 4filter ( $self->filters_by_type($stage) ) {
-		$filter->get_one($data);
+	    foreach my $filter ( $self->filters_by_stage($stage) ) {
+		$data = $filter->get($data);
 	    }
 	}
-    }
+
+	$data;
+    };
 
     method 'add_filter' => sub {
 	my $self = shift;

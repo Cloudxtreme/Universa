@@ -4,8 +4,6 @@ use Moose;
 use MooseX::Types::UUID qw(UUID);
 use Data::UUID;
 
-with 'Universa::Role::FilterPipeline';
-
 has 'id'        => (
     isa         => UUID,
     is          => 'ro',
@@ -39,7 +37,10 @@ sub build_info {
     }
 }
 
-# Data input:
-sub put {}
+sub BUILD {} # Stub
+
+with 'Universa::Role::FilterPipeline' => {
+    stages => ['Gate' => 'Port'],
+};
 
 1;

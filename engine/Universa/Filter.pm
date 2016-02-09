@@ -4,6 +4,12 @@ package Universa::Filter;
 use Moose;
 
 
+has 'stage' => (
+    isa     => 'Str',
+    is      => 'ro', # Should this be rw?
+    default => '',
+    );
+
 # Overload these two:
 sub put { @_[1 .. $#_] }
 sub get { @_[1 .. $#_] }
