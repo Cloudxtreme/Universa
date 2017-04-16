@@ -3,6 +3,8 @@ package Universa::Core;
 use Moose;
 use Moose::Util qw(apply_all_roles);
 use Moose::Autobox;
+use Moose::Exporter;
+use IO::Async::Loop;
 
 use Universa::Config;
 
@@ -11,12 +13,21 @@ with 'Universa::Role::Configuration' => {
     class      => 'Universa::Config',
 };
 
+our $UNIVERSA; # Singleton reference
+
+Moose::Exporter->setup_import_methods(
+    'as_is' => [ 'universa' => \&universa ],
+    );
 
 # Apply method modifiers to these in your subsystems:
 sub universa_preinit  {}
 sub universa_postinit {}
 sub universa_init     {}
 sub dispatch          {} # ($role, $call, @args)
+
+# Fancy syntax sugar + exporty things:
+sub universa { $Universa::Core::UNIVERSA }
+sub BUILD    { $Universa::Core::UNIVERSA ||= shift }
 
 sub start {
     my $self = shift;
@@ -39,7 +50,8 @@ sub start {
 
     $self->$_() foreach (@init_levels);
     print "ready.\n";
-    sleep;
+
+    IO::Async::Loop->new->run;
 }
 
 __PACKAGE__->meta->make_immutable;

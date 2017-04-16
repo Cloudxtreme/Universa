@@ -6,7 +6,11 @@ package Universa::Plugin::PlayerSockets;
 use Moose;
 use IO::Socket;
 use IO::Socket::INET6;
-use POSIX ':sys_wait_h';
+use IO::Async::Listener;
+use IO::Async::Loop;
+
+use Universa::Core qw(universa);
+use Universa::Message;
 
 with 'Universa::Role::Plugin';
 with 'Universa::Role::Initialization';
@@ -15,50 +19,6 @@ with 'Universa::Role::Configuration' => {
     class      => 'Universa::Plugin::PlayerSockets::Config',
     configfile => 'playersockets.yml', 
 };
-
-has 'listen4' => (
-    isa       => 'FileHandle',
-    is        => 'rw',
-    builder   => 'build_listen4',
-    lazy      => 1,
-    );
-
-has 'listen6' => (
-    isa       => 'FileHandle',
-    is        => 'rw',
-    builder   => 'build_listen6',
-    lazy      => 1,
-    );
-
-sub build_listen4 {
-    my $self = shift;
-    my $port = $self->config->{port};
-    my $bind = $self->config->{ipv4_bind} || '0.0.0.0';
-        
-    IO::Socket::INET->new(
-        Domain    => AF_INET,
-        LocalAddr => $bind,
-        LocalPort => $port,
-        Listen    => $self->config->{'max'}  || 20,
-        Reuse     => 1,
-        ) or die "Can't create socket: $!\n";
-}
-
-sub build_listen6 {
-    my $self = shift;
-    my $port = $self->config->{port};
-    my $bind = $self->config->{ipv6_bind} || '::0';
-    
-    IO::Socket::INET6->new(
-        Domain    => AF_INET6,
-        LocalAddr => $bind,
-        LocalPort => $port,
-        Listen    => $self->config->{'max'}  || 20,
-        Reuse     => 1,
-        ) or die "Can't create socket: $!\n";
-}
-
-$SIG{CHLD} = \&reaper;
 
 sub universa_preinit {
     my $self = shift;
@@ -71,60 +31,52 @@ sub universa_preinit {
 sub universa_postinit {
     my $self = shift;
 
-    foreach my $ipv (qw[4 6]) {
-	next unless $self->config->{'ipv' . $ipv};
+    my $loop = IO::Async::Loop->new;
+    my $listener = IO::Async::Listener->new(
+        on_stream => sub {
+            my (undef, $stream) = @_;
 
-	my $call = 'listen' . $ipv;
-	my $listener = $self->$call;
-	my $bind = $self->config->{'ipv' . $ipv . '_bind'} .
-	    ':' . $self->config->{'port'};
+            # Client connected:
+            my $player = universa->entity->create( type => 'player' );
+            my $filter = Universa::Plugin::PlayerSockets::SocketFilter->new(
+	        _stream => $stream,
+	        stage   => 'Port',
+	        );
 
-	defined(my $child_pid = fork()) or die "can't fork: $!";
+            $player->add_filter($filter);
+            my $inventory = universa->channel->create( name => 'inv:' . $player->id );
+            $player->info->{'inv_channel'} = $inventory; # Entities almost talk to themselves.
 
-	if ($child_pid) {
-	    for (;;) {
-		my $so_client = $listener->accept;
-		$self->on_socket_accept($so_client);
-	    }
-	}
+            $stream->configure(
+                on_read => sub {
+                    my ($self, $bufref, $eof) = @_;
 
-	print "[Player Sockets] listening for connections on $bind\n";
-    }
-}
+                    $player->info->{'inv_channel'}->message(
+                        target   => [ ':in' ],
+                        type     => 'player_socket_input', 
+                        params   => {
+                            data => $$bufref,
+                        },
+                    )->send;
 
-sub on_socket_accept {
-    my ($self, $client) = @_;
+                    $$bufref = "";
+                    return 0;
+                },
+            );
 
-    my $player = Universa::Entity->new( type => 'player' );
-    my $filter = Universa::Plugin::PlayerSockets::SocketFilter->new(
-	_socket => $client,
-	stage   => 'Port',
-	);
+            $loop->add($stream);
+        }
+    );
 
-    $player->add_filter( $filter );
-    $self->core->register_entity($player);
-
-    while (my $data = <$client>) {
-	chomp $data;
-	$data =~ s/^\s+|\s+$//;
-	$data = $player->get($data);
-
-	# Send an event notifying the watchers that data has arrived:
-	$self->core->dispatch(
-	    'EntityHandler' => 'on_entity_data' => $player, $data);
-    }
-    
-    close $client;
-}
-
-sub reaper {
-    my $child_pid;
-
-    do {
-	$child_pid = waitpid(-1, WNOHANG);
-    } while $child_pid > 0;
-
-    print "$child_pid exited\n";
+    $loop->add($listener);
+    $listener->listen(
+        addr => {
+            socktype => 'stream',
+            family   => 'inet',
+            port     => $self->config->{'port'},
+            ip       => $self->config->{'ipv4_bind'},
+        },
+    )->get;
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -148,8 +100,8 @@ package Universa::Plugin::PlayerSockets::SocketFilter;
 use Moose;
 extends 'Universa::Filter';
 
-has '_socket' => (
-    isa       => 'FileHandle',
+has '_stream' => (
+    isa       => 'IO::Async::Stream',
     is        => 'ro',
     required  => 1,
     );
@@ -158,10 +110,10 @@ has '_socket' => (
 sub put {
     my ($self, $data) = @_;
 
-    my $socket = $self->_socket;
+    my $socket = $self->_stream;
 
     use Data::Dumper;
-    print $socket Dumper $data;
+    $socket->write( $data );
 }
 
 __PACKAGE__->meta->make_immutable;

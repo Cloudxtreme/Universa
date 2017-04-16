@@ -1,8 +1,9 @@
-package Universa::Entity;
+                package Universa::Entity;
 
 use Moose;
 use MooseX::Types::UUID qw(UUID);
 use Data::UUID;
+use Universa::Core qw(universa);
 
 has 'id'        => (
     isa         => UUID,
@@ -24,6 +25,13 @@ has 'type'      => (
     required    => 1,
     );
 
+# Registers an entity with the engine. Necessary for using by_uuid(), etc.
+sub register {
+    my $self = shift;
+
+    universa->add_entity($self);
+    $self;
+}
 
 sub build_id {
     my $ug = Data::UUID->new;

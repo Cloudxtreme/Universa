@@ -2,6 +2,7 @@ package Universa::Channel;
 
 use Moose;
 use Universa::Attribute::EntityCollection;
+use Universa::Core qw(universa);
 
 has '_entities' => (
     isa         => 'Universa::Attribute::EntityCollection',
@@ -39,26 +40,46 @@ has 'info'      => (
     lazy        => 1,
     );
 
-
-sub route {
+sub put {
     my ($self, $message) = @_;
     
     if ($message->target->[0] eq ':all') {
 	# Broadcast message:
 
-	print "TESTING\n";
-	foreach my $entity ( $self->_entities->_values ) {
-	    $entity->put($message);
-	}
+	    foreach my $entity ( $self->_entities->_values ) {
+	        $entity->put($message);
+	    }
+    }
+
+    # Used for game input. i.e. client socket -> watcher
+    elsif ($message->target->[0] eq ':in') {
+        universa->dispatch( 'ChannelWatcher' => 'on_channel_input' => $message )
     }
 
     else {
-	foreach my $uuid ( @{ $message->target } ) {
-	    if (my $entity = $self->entity_by_uuid($uuid)) {
-		$entity->put($message);
+	    foreach my $uuid ( @{ $message->target } ) {
+
+	        if (my $entity = universa->entity($uuid)) {
+		        $entity->put($message);
+	        }
 	    }
-	}
     }
+}
+
+sub message {
+    my ($self, %params) = @_;
+
+    Universa::Message->new(
+        channel => $self->name,
+        %params,
+    );
+}
+
+sub register {
+    my $self = shift;
+
+    universa->demux_register_channel($self);
+    $self;
 }
 
 sub _build_info { {} }

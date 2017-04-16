@@ -27,10 +27,8 @@ role {
     method 'put' => sub {
 	my ($self, $data) = @_;
 	
-	print "DEBUG\n";
 	foreach my $stage ( @{ $p->stages } ) {
 	    foreach my $filter ( $self->filters_by_stage($stage) ) {
-		print ref($filter) . "\n";
 		$data = $filter->put($data);
 	    }
 	}

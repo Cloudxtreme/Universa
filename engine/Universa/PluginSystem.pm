@@ -59,7 +59,6 @@ after 'universa_postinit' => sub {
     shift->dispatch('Initialization' => 'universa_postinit');
 };
 
-# TODO: Clean this up:
 after 'dispatch' => sub {
     $_[0]->plugin_dispatch(@_[1 .. $#_]);
 };

@@ -3,6 +3,7 @@ package Universa::Message;
 use Moose;
 use Moose::Util qw(apply_all_roles);
 use MooseX::Types::UUID qw(UUID);
+use Universa::Core qw(universa);
 
 has 'target'    => (
     isa         => 'ArrayRef[' . UUID . '|Str]', # TODO: Coercion?
@@ -26,10 +27,21 @@ has 'type'      => (
     required    => 1,
     );
 
+has 'channel'   => (
+    isa         => 'Str',
+    is          => 'ro',
+);
+
 has 'params'    => (
     isa         => 'HashRef[Any|Undef]',
     is          => 'ro',
     default     => sub { {} },
     );
+
+sub send {
+    my $self = shift;
+
+    universa->demux_input($self);
+}
 
 __PACKAGE__->meta->make_immutable;

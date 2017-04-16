@@ -3,7 +3,6 @@ package Universa::Role::EntityHandler;
 use Moose::Role;
 
 
-sub register_entity {} # ($entity)
-sub on_entity_data  {} # ($entity, $data)
+sub register_entity {} # (Universa::Entity)
 
 1;
